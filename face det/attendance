@@ -1,0 +1,109 @@
+import cv2
+import numpy as np
+import face_recognition
+import os
+
+path="images"
+images=[]
+classnames=[]
+mylis=os.listdir(path)
+print(mylis)
+for cls in mylis:
+    curimg=cv2.imread(f'{path}/{cls}')
+    images.append(curimg)
+    classnames.append(os.path.splitext(cls)[0])
+print(classnames)
+
+def findencodings(images):
+    encodelis=[]
+    for i in images:
+        i=cv2.cvtColor(i,cv2.COLOR_BGR2RGB)
+        encode=face_recognition.face_encodings(i)[0]
+        encodelis.append(encode)
+    return encodelis
+encodelisknown=findencodings(images)
+print("done")
+cap=cv2.VideoCapture(0)
+while True:
+    success,i=cap.read()
+    imgs=cv2.resize(i,(0,0),None,0.25,0.25)
+    imgs=cv2.cvtColor(imgs,cv2.COLOR_BGR2RGB)
+    size_img=i.shape
+    h,w,c=size_img
+    midh=h//2
+    midw=w//2
+    cv2.line(i,(midw,0),(midw,h),(255,0,0),4)
+    cv2.line(i,(0,midh),(w,midh),(255,0,0),4)
+    cv2.circle(i,(midw,midh),4,(0,255,0),-1)
+
+    print()
+
+    facecurframe=face_recognition.face_locations(imgs)
+    encodecurframe=face_recognition.face_encodings(imgs,facecurframe)
+    for encodeFace,facloc in zip(encodecurframe,facecurframe):
+        matches=face_recognition.compare_faces(encodelisknown,encodeFace)
+        facedis=face_recognition.face_distance(encodelisknown,encodeFace)
+
+        #print(facedis)
+        y1,x2,y2,x1=facloc
+        y1=4*y1
+        y2=4*y2
+        x1=x1*4
+        x2=x2*4
+        midx=(x1+x2)//2
+        midy=(y1+y2)//2
+
+
+
+        cv2.rectangle(i,(x1,y1),(x2,y2),(255,0,0),3)
+        cv2.line(i,(midx,y1),(midx,y2),(255,0,0),4)
+        cv2.line(i,(x1,midy),(x2,midy),(255,0,0),4)
+        cv2.circle(i,(midx,midy),4,(0,255,0),-1)
+        cv2.line(i,(midw,midh),(midx,midy),(255,0,0),4)
+        cv2.rectangle(i,(0,0),(150,50),(255,255,255),-1)
+        cv2.putText(i,f'',(30,45),cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255),2)
+        if midx>midw and midy>midh:
+            
+            cv2.putText(i,f'Lower right',(30,45),cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255),2)
+        if midx>midw and midy<midh:
+           
+            cv2.putText(i,f'Upper right',(30,45),cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255),2)
+        if midx<midw and midy>midh:
+            cv2.putText(i,f'Lower right',(30,45),cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255),2)
+            
+        if midx<midw and midy<midh:
+           
+            cv2.putText(i,f'Upper left',(30,45),cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255),2)
+
+
+
+
+        matchindex=np.argmin(facedis)
+        if matches[matchindex]:
+            name=classnames[matchindex].upper()
+            print(name)
+    cv2.imshow("webcame",i)
+
+    if cv2.waitKey(1) & 0XFF == ord("f"):
+        break
+
+
+
+    
+
+        
+
+        
+
+#facloc=face_recognition.face_locations(elon)[0]
+#encodeElon=face_recognition.face_encodings(elon)[0]
+#cv2.rectangle(elon,(facloc[3],facloc[0]),(facloc[1],facloc[2]),(255,0,255),2)
+
+
+#faceloctest=face_recognition.face_locations(Test)[0]
+#encodetest=face_recognition.face_encodings(Test)[0]
+#cv2.rectangle(Test,(faceloctest[3],faceloctest[0]),(faceloctest[1],faceloctest[2]),(255,0,255),2)
+#results=face_recognition.compare_faces([encodeElon],encodetest)
+#facedis=face_recognition.face_distance([encodeElon],encodetest)
+
+
